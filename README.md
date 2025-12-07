@@ -95,6 +95,9 @@ jobs:
           comment: always
 ```
 
+Note: this will only work after the fast-forward action has been
+merged into the default branch.
+
 ## Fast Forwarding a Pull Request
 
 To actually fast-forward a branch, add
@@ -134,6 +137,9 @@ This workflow is only run when a comment that includes `/fast-forward`
 is added to the pull request.  The workflow is careful to check that
 the user who triggered the workflow is actually authorized to push to
 the repository.
+
+Note: this will only work after the fast-forward action has been
+merged into the default branch.
 
 ## Disabling Comments
 
@@ -180,3 +186,26 @@ The comment is... {
 ```
 
 Additional fields may be added to the JSON document in the future.
+
+## Troubleshooting
+
+### My GitHub Actions don't run after I fast-forward a PR
+
+
+With the standard `GITHUB_TOKEN`, after a fast-forward succeeds, no workflows will be triggered. This may be confusing as the user might expect their CI/CD to trigger on any push to `main` for example.
+
+The issue stems from GitHub not triggering Actions on events created with `GITHUB_TOKEN` to avoid recursive worflows. From GitHub's [docs](https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow):
+
+> When you use the repository's `GITHUB_TOKEN` to perform tasks, events triggered by the `GITHUB_TOKEN`
+> will not create a new workflow run. This prevents you from accidentally creating recursive workflow runs.
+
+A solution is to use a [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) in the fast-forward step if you want GitHub Actions CI checks to run on the base branch after it gets fast-forwarded:
+```yaml
+      - name: Fast forwarding
+        uses: sequoia-pgp/fast-forward@v1
+        with:
+          github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          # your other configs...
+```
+
+The generated PR comments will then appear as if they were written by the owner of the personal access token, and the fast-forward will appear is if performed by that owner. 
